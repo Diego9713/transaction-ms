@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: transaction-ms
+  cloud:
+    config:
+      enabled: true
+      uri: http://localhost:8001
+      username: root
+      password: s3cr3t
+variable:
+  state: active
