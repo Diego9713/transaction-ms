@@ -19,21 +19,32 @@ public class FilterTransactionDebit {
 
     /**
      * Method to configure the saving of the transaction
-     * @param transaction is object sending
-     * @param transactionFlux is the number of transactions carried out
+     *
+     * @param transaction     -> is object sending
+     * @param transactionFlux -> is the number of transactions carried out
      * @return a object product saving
      */
     public Mono<ProductDto> isSave(Transaction transaction, List<Transaction> transactionFlux) {
         Mono<ProductDto> findToProduct = webClientProductHelper.findProduct(transaction.getProductId());
-        return findToProduct.filter(e -> Arrays.stream(ConstantsDebit.values()).anyMatch(m -> m.toString().equalsIgnoreCase(e.getAccountType())))
+        return findToProduct.filter(e -> Arrays.stream(ConstantsDebit.values())
+                        .anyMatch(m -> m.toString().equalsIgnoreCase(e.getAccountType())))
                 .switchIfEmpty(Mono.just(new ProductDto()))
                 .flatMap(productDto -> isTypeTransfer(transaction, productDto, transactionFlux));
     }
 
+    /**
+     * Method to condition the transaction amount.
+     *
+     * @param transaction     -> is object sending
+     * @param productDto      -> is object find.
+     * @param transactionFlux -> is list transactions.
+     * @return a product condition.
+     */
     public Mono<ProductDto> isTypeTransfer(Transaction transaction, ProductDto productDto, List<Transaction> transactionFlux) {
         Mono<ProductDto> productDtoMono = Mono.just(new ProductDto());
 
-        if (Arrays.stream(ConstantsDebitTransac.values()).anyMatch(m -> m.toString().equalsIgnoreCase(transaction.getTransactionType()))) {
+        if (Arrays.stream(ConstantsDebitTransac.values()).anyMatch(m -> m.toString()
+                .equalsIgnoreCase(transaction.getTransactionType()))) {
             if (transaction.getTransactionType().equalsIgnoreCase(ConstantsDebitTransac.DEPOSIT.name())) {
 
                 productDto.setAmount(productDto.getAmount() + transaction.getTransactionAmount());
@@ -51,6 +62,14 @@ public class FilterTransactionDebit {
         return productDtoMono;
     }
 
+    /**
+     * Method that filters the storage of the product.
+     *
+     * @param productDto      -> is object find.
+     * @param transactionFlux -> is list transactions.
+     * @param transaction     -> is object sending.
+     * @return a product condition.
+     */
     public Mono<ProductDto> filterSaveProduct(ProductDto productDto, List<Transaction> transactionFlux, Transaction transaction) {
         Mono<ProductDto> productDtoMono = Mono.just(new ProductDto());
         if (productDto.getAccountType().equalsIgnoreCase(ConstantsDebit.SAVING.name())) {
@@ -79,18 +98,26 @@ public class FilterTransactionDebit {
         return productDtoMono;
     }
 
+    /**
+     * Method that filters the remove of the product.
+     *
+     * @param transaction -> is object sending.
+     * @return a condition of remove.
+     */
     public Mono<Boolean> filterRemoveProduct(Transaction transaction) {
         Mono<Boolean> optionRemove;
         Mono<ProductDto> findToProduct = webClientProductHelper.findProduct(transaction.getProductId());
         if (transaction.getTransactionType().equalsIgnoreCase(ConstantsDebitTransac.DEPOSIT.name())) {
             optionRemove = findToProduct.flatMap(productDto -> {
                 productDto.setAmount(productDto.getAmount() - transaction.getTransactionAmount());
-                return webClientProductHelper.updateProduct(productDto.getId(), productDto).flatMap(productDto1 -> Mono.just(true));
+                return webClientProductHelper.updateProduct(productDto.getId(), productDto)
+                        .flatMap(productDto1 -> Mono.just(true));
             });
         } else {
             optionRemove = findToProduct.flatMap(productDto -> {
                 productDto.setAmount(productDto.getAmount() + transaction.getTransactionAmount());
-                return webClientProductHelper.updateProduct(productDto.getId(), productDto).flatMap(productDto1 -> Mono.just(true));
+                return webClientProductHelper.updateProduct(productDto.getId(), productDto)
+                        .flatMap(productDto1 -> Mono.just(true));
             });
         }
 
