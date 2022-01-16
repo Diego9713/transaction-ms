@@ -1,22 +1,24 @@
 package bootcamp.com.transactionms.model;
 
-import lombok.AllArgsConstructor;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
-
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 public class TransactionDto {
-    private String id;
-    private String productId;
-    private String paymentMethod;
-    private String transactionType;
-    private double transactionAmount;
-    private Date createdAt;
-    private String status;
+  private String id;
+  private String productId;
+  private String fromProduct;
+  private String paymentMethod;
+  private String transactionType;
+  private double transactionAmount;
+  private double commission = 0;
+  private String createdAt;
+  private String createdBy;
+  private LocalDate updateAt;
+  private String updateBy;
+  private String status;
 }

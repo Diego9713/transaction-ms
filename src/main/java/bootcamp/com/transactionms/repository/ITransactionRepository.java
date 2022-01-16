@@ -7,5 +7,7 @@ import reactor.core.publisher.Flux;
 
 @Repository
 public interface ITransactionRepository extends ReactiveMongoRepository<Transaction, String> {
-    Flux<Transaction> findByProductId(String id);
+  Flux<Transaction> findByProductId(String id);
+
+  Flux<Transaction> findByProductIdAndCreatedAtBetween(String id, String from, String until);
 }
