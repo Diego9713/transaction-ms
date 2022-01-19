@@ -10,7 +10,6 @@ import bootcamp.com.transactionms.model.TransactionDto;
 import bootcamp.com.transactionms.repository.ITransactionRepository;
 import bootcamp.com.transactionms.utils.AppUtils;
 import bootcamp.com.transactionms.utils.ConstantsTransacStatus;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -101,12 +100,13 @@ public class TransactionService implements ITransactionService {
     log.info("Save Transaction Debit >>>");
     Mono<TransactionDto> filterCreateTransaction = filterTransaction
         .filterTransactionCreate(transaction);
+    Flux<Transaction> transactionFlux = transactionRepository.findByProductId(transaction.getProductId());
     Mono<TransactionDto> filterProduct = filterCreateTransaction
-        .flatMap(transaction1 -> filterDebit(transaction1, transaction.getProductId()));
+        .flatMap(transaction1 -> filterTransactionDebit.filterDebit(transaction1, transaction.getProductId(), transactionFlux));
     return filterProduct.map(AppUtils::transactionDtoToEntity)
       .flatMap(transaction1 -> transaction1.getProductId() != null
-      ? transactionRepository.save(transaction1).map(AppUtils::entityToTransactionDto)
-      : Mono.empty());
+        ? transactionRepository.save(transaction1).map(AppUtils::entityToTransactionDto)
+        : Mono.empty());
 
   }
 
@@ -121,9 +121,12 @@ public class TransactionService implements ITransactionService {
   public Mono<TransactionDto> createTransferDebit(TransactionDto transaction) {
     log.info("Save Transfer Debit >>>");
     Mono<TransactionDto> filterCreateTransaction = filterTransaction.filterTransactionCreate(transaction);
-    Mono<TransactionDto> transfer = filterCreateTransaction.flatMap(t -> filterDebit(t, transaction.getProductId())
+    Flux<Transaction> transactionFluxTo = transactionRepository.findByProductId(transaction.getProductId());
+    Flux<Transaction> transactionFluxFrom = transactionRepository.findByProductId(transaction.getFromProduct());
+    Mono<TransactionDto> transfer = filterCreateTransaction.flatMap(t -> filterTransactionDebit
+        .filterDebit(t, transaction.getProductId(), transactionFluxTo)
         .filter(afterTransaction -> afterTransaction.getProductId() != null)
-        .flatMap(next -> filterDebit(t, transaction.getFromProduct())));
+        .flatMap(next -> filterTransactionDebit.filterDebit(t, transaction.getFromProduct(), transactionFluxFrom)));
     return transfer.filter(t -> t.getProductId() != null)
       .map(AppUtils::transactionDtoToEntity)
       .flatMap(transactionRepository::save).map(AppUtils::entityToTransactionDto);
@@ -141,6 +144,7 @@ public class TransactionService implements ITransactionService {
   public Mono<TransactionDto> updateTransactionDebit(TransactionDto transaction, String id) {
     log.info("Update Transaction Debit >>>");
     Mono<TransactionDto> findTransaction = transactionRepository.findById(id).map(AppUtils::entityToTransactionDto);
+    Flux<Transaction> transactionFlux = transactionRepository.findByProductId(transaction.getProductId());
     Mono<TransactionDto> filterProduct = findTransaction.switchIfEmpty(Mono.empty())
         .flatMap(transaction1 -> {
           transaction.setId(id);
@@ -149,16 +153,16 @@ public class TransactionService implements ITransactionService {
           } else {
             transaction.setTransactionAmount(transaction.getTransactionAmount() - transaction1.getTransactionAmount());
           }
-          return filterDebit(transaction, transaction.getProductId());
+          return filterTransactionDebit.filterDebit(transaction, transaction.getProductId(), transactionFlux);
         });
     return filterProduct.flatMap(transaction1 -> transaction1.getId() != null
       ? filterTransaction.filterTransactionUpdate(findTransaction)
-        .map(AppUtils::transactionDtoToEntity)
-        .flatMap(transactionModel -> {
-          transactionModel.setId(id);
-          return transactionRepository.save(transactionModel);
-        })
-        .map(AppUtils::entityToTransactionDto)
+      .map(AppUtils::transactionDtoToEntity)
+      .flatMap(transactionModel -> {
+        transactionModel.setId(id);
+        return transactionRepository.save(transactionModel);
+      })
+      .map(AppUtils::entityToTransactionDto)
       : Mono.empty());
   }
 
@@ -178,8 +182,8 @@ public class TransactionService implements ITransactionService {
       .flatMap(transaction -> filterTransactionDebit.filterRemoveProduct(transaction)
         .flatMap(optionRemove -> Boolean.TRUE.equals(optionRemove)
           ? filterTransaction.filterTransactionDelete(transaction)
-            .flatMap(transactionRepository::save)
-            .map(AppUtils::entityToTransactionDto)
+          .flatMap(transactionRepository::save)
+          .map(AppUtils::entityToTransactionDto)
           : Mono.just(new TransactionDto())));
   }
 
@@ -193,12 +197,13 @@ public class TransactionService implements ITransactionService {
   @Transactional
   public Mono<TransactionDto> createTransactionCredit(TransactionDto transaction) {
     log.info("Save Transaction Credit >>>");
-    Mono<ProductDto> filterProduct = filterCredit(transaction);
+    Flux<Transaction> transactionFlux = transactionRepository.findByProductId(transaction.getProductId());
+    Mono<ProductDto> filterProduct = filterTransactionCredit.filterCredit(transaction, transactionFlux);
     return filterProduct.flatMap(productDto -> productDto.getId() != null
       ? filterTransaction.filterTransactionCreate(transaction)
-        .map(AppUtils::transactionDtoToEntity)
-        .flatMap(transactionRepository::insert)
-        .map(AppUtils::entityToTransactionDto)
+      .map(AppUtils::transactionDtoToEntity)
+      .flatMap(transactionRepository::insert)
+      .map(AppUtils::entityToTransactionDto)
       : Mono.just(new TransactionDto()));
   }
 
@@ -214,24 +219,25 @@ public class TransactionService implements ITransactionService {
   public Mono<TransactionDto> updateTransactionCredit(TransactionDto transaction, String id) {
     log.info("Update Transaction Credit >>>");
     Mono<TransactionDto> findTransaction = transactionRepository.findById(id).map(AppUtils::entityToTransactionDto);
+    Flux<Transaction> transactionFlux = transactionRepository.findByProductId(transaction.getProductId());
     Mono<ProductDto> filterProduct = findTransaction.switchIfEmpty(Mono.empty())
-        .flatMap(transaction1 -> filterCredit(transaction));
+        .flatMap(transaction1 -> filterTransactionCredit.filterCredit(transaction, transactionFlux));
     return filterProduct.flatMap(productDto -> productDto.getId() != null
       ? filterTransaction.filterTransactionUpdate(findTransaction)
-        .map(AppUtils::transactionDtoToEntity)
-        .flatMap(transactionModel -> {
-          transactionModel.setId(id);
+      .map(AppUtils::transactionDtoToEntity)
+      .flatMap(transactionModel -> {
+        transactionModel.setId(id);
 
-          if (transactionModel.getTransactionAmount() > transaction.getTransactionAmount()) {
-            transactionModel.setTransactionAmount(
-                transactionModel.getTransactionAmount() - transaction.getTransactionAmount());
-          } else {
-            transactionModel.setTransactionAmount(
-                transaction.getTransactionAmount() - transactionModel.getTransactionAmount());
-          }
-          return transactionRepository.save(transactionModel);
-        })
-        .map(AppUtils::entityToTransactionDto)
+        if (transactionModel.getTransactionAmount() > transaction.getTransactionAmount()) {
+          transactionModel.setTransactionAmount(
+              transactionModel.getTransactionAmount() - transaction.getTransactionAmount());
+        } else {
+          transactionModel.setTransactionAmount(
+              transaction.getTransactionAmount() - transactionModel.getTransactionAmount());
+        }
+        return transactionRepository.save(transactionModel);
+      })
+      .map(AppUtils::entityToTransactionDto)
       : Mono.just(new TransactionDto()));
   }
 
@@ -252,35 +258,9 @@ public class TransactionService implements ITransactionService {
       .flatMap(transaction -> filterTransactionCredit.filterRemoveProduct(transaction)
         .flatMap(optionRemove -> Boolean.TRUE.equals(optionRemove)
           ? filterTransaction.filterTransactionDelete(transaction)
-            .flatMap(transactionRepository::save)
-            .map(AppUtils::entityToTransactionDto)
+          .flatMap(transactionRepository::save)
+          .map(AppUtils::entityToTransactionDto)
           : Mono.just(new TransactionDto())));
-  }
-
-  /**
-   * Method to condition the saving of the transaction Debits
-   *
-   * @param transaction -> attribute object type transaction.
-   * @return the condition for saving.
-   */
-  public Mono<TransactionDto> filterDebit(TransactionDto transaction, String id) {
-    log.info(" Filter Transaction Debit >>>");
-    Mono<List<Transaction>> transactionFlux = transactionRepository.findByProductId(id).collectList();
-    return transactionFlux.flatMap(transactionList -> filterTransactionDebit.isSave(transaction, id, transactionList));
-  }
-
-  /**
-   * Method to condition the saving of the transaction Credits
-   *
-   * @param transaction -> attribute object type transaction.
-   * @return the condition for saving.
-   */
-  public Mono<ProductDto> filterCredit(TransactionDto transaction) {
-    log.info(" Filter Transaction Credit >>>");
-    Mono<List<Transaction>> transactionFlux = transactionRepository
-        .findByProductId(transaction.getProductId()).collectList();
-    return transactionFlux.flatMap(transactionList -> filterTransactionCredit.isSave(transaction));
-
   }
 
 }

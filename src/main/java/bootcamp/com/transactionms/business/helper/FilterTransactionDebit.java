@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -236,6 +237,17 @@ public class FilterTransactionDebit {
     }
 
     return optionRemove;
+  }
+
+  /**
+   * Method to condition the saving of the transaction Debits.
+   *
+   * @param transaction -> attribute object type transaction.
+   * @return the condition for saving.
+   */
+  public Mono<TransactionDto> filterDebit(TransactionDto transaction, String id, Flux<Transaction> transactionFlux) {
+    Mono<List<Transaction>> transactionMono = transactionFlux.collectList();
+    return transactionMono.flatMap(transactionList -> isSave(transaction, id, transactionList));
   }
 
 }

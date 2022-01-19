@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class FilterTransaction {
+
   private static final String BANK = "123456789";
 
   /**

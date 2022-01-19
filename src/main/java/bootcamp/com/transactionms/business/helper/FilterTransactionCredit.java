@@ -6,8 +6,10 @@ import bootcamp.com.transactionms.model.TransactionDto;
 import bootcamp.com.transactionms.utils.ConstantsCredit;
 import bootcamp.com.transactionms.utils.ConstantsCreditTransac;
 import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -100,4 +102,14 @@ public class FilterTransactionCredit {
     return optionRemove;
   }
 
+  /**
+   * Method to condition the saving of the transaction Credits.
+   *
+   * @param transaction -> attribute object type transaction.
+   * @return the condition for saving.
+   */
+  public Mono<ProductDto> filterCredit(TransactionDto transaction, Flux<Transaction> transactionFlux) {
+    Mono<List<Transaction>> transactionMono = transactionFlux.collectList();
+    return transactionMono.flatMap(transactionList -> isSave(transaction));
+  }
 }

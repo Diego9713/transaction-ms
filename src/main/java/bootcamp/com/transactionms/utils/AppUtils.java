@@ -2,9 +2,7 @@ package bootcamp.com.transactionms.utils;
 
 import bootcamp.com.transactionms.model.Transaction;
 import bootcamp.com.transactionms.model.TransactionDto;
-
 import java.time.LocalDate;
-
 import org.springframework.beans.BeanUtils;
 
 public class AppUtils {

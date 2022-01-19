@@ -11,11 +11,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 @EnableWebFlux
 public class WebClientConfig implements WebFluxConfigurer {
-    @Bean
-    public WebClient getWebClient() {
-        return WebClient.builder()
-                .baseUrl("http://localhost:8081")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
+  @Bean
+  public WebClient getWebClient() {
+    return WebClient.builder()
+      .baseUrl("http://localhost:8081")
+      .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+      .build();
+  }
 }
