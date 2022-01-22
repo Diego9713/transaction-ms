@@ -55,11 +55,11 @@ class FilterTransactionCreditTest {
   private static final double maintenanceCommission = 0;
   private static final LocalDateTime maintenanceCommissionDay = LocalDateTime.now();
   private static final int maxTransactNumber = 10;
-  private static final LocalDateTime transactNumberDay = LocalDateTime.now();
+  private static final LocalDate transactNumberDay = LocalDate.now();
   private static final double creditLimit = 0;
   private static final String customer = "61db5ffd7610bd27a53b2b8b";
   private static final String statusProduct = "ACTIVE";
-  private static final LocalDateTime createdAtProduct = LocalDateTime.now();
+  private static final LocalDate createdAtProduct = LocalDate.now();
   private static final String createdByProduct = "pedro";
   private static final LocalDate updateAtProduct = LocalDate.now();
   private static final String updateByProduct = "pedro";

@@ -12,6 +12,8 @@ public interface ITransactionService {
 
   Flux<TransactionDto> findTransactionByProduct(String productId);
 
+  Flux<TransactionDto> findTransactionByProductAndLimit(String productId);
+
   Flux<TransactionDto> findCommissionByProduct(String id, String from, String until);
 
   Mono<TransactionDto> createTransactionDebit(TransactionDto transaction);

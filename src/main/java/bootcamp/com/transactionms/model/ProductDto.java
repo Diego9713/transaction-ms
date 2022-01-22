@@ -10,23 +10,28 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class ProductDto {
+
   private String id;
   private String accountType;
   private String accountNumber;
-  private LocalDateTime createdAt;
-  private String createdBy;
-  private LocalDate updateAt;
-  private String updateBy;
+  private String subAccountNumber;
+  private int level = 1;
   private String currency;
-  private double amount;
+  private double amount = 0;
   private double maintenanceCommission;
   private LocalDateTime maintenanceCommissionDay;
-  private double minimumAverageAmount = 0;
-  private double averageDailyBalance = 0;
-  private LocalDate averageDailyBalanceDay;
-  private int maxTransactNumber;
-  private LocalDateTime transactNumberDay;
+  private int maxTransactNumber = 10;
+  private LocalDate transactNumberDay;
   private double creditLimit;
   private String customer;
   private String status;
+  private LocalDate createdAt;
+  private String createdBy;
+  private LocalDate updateAt;
+  private String updateBy;
+  private LocalDate expiredDate;
+  private double minimumAverageAmount = 0;
+  private double averageDailyBalance = 0;
+  private LocalDate averageDailyBalanceDay;
+
 }

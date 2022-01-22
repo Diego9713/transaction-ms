@@ -10,4 +10,7 @@ public interface ITransactionRepository extends ReactiveMongoRepository<Transact
   Flux<Transaction> findByProductId(String id);
 
   Flux<Transaction> findByProductIdAndCreatedAtBetween(String id, String from, String until);
+
+  Flux<Transaction> findByProductIdOrderByTransactionAmountDesc(String productId);
+
 }

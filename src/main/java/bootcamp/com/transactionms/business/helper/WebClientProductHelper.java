@@ -4,6 +4,7 @@ import bootcamp.com.transactionms.model.ProductDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -22,6 +23,19 @@ public class WebClientProductHelper {
       .uri("/api/v1/products/" + id)
       .retrieve()
       .bodyToMono(ProductDto.class);
+  }
+
+  /**
+   * Method to find product by number account.
+   *
+   * @param account -> is the number product identifier.
+   * @return a object product.
+   */
+  public Flux<ProductDto> findProductByAccount(String account) {
+    return webClient.get()
+      .uri("/api/v1/products/accountnumber/" + account)
+      .retrieve()
+      .bodyToFlux(ProductDto.class);
   }
 
   /**

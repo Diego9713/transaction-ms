@@ -47,6 +47,17 @@ public class TransactionController {
   }
 
   /**
+   * Method to find the  ten movements that a product.
+   *
+   * @param productId -> identifier of la account.
+   * @return a list transaction.
+   */
+  @GetMapping("/product/{productId}/limit")
+  public Flux<TransactionDto> findTransactionByProductAndLimit(@PathVariable("productId") String productId) {
+    return transactionService.findTransactionByProduct(productId);
+  }
+
+  /**
    * Method to find the bank movements that a customer has.
    *
    * @param productId -> identifier of la account.
