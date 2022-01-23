@@ -2,7 +2,7 @@ package bootcamp.com.transactionms.expose;
 
 import bootcamp.com.transactionms.business.impl.TransactionService;
 import bootcamp.com.transactionms.model.Transaction;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +16,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.time.LocalDate;
+
 import static org.mockito.Mockito.when;
 
 
@@ -70,7 +72,8 @@ class TransactionControllerTest {
   void findAllTransaction() {
     when(transactionService.findAllTransaction()).thenReturn(Flux.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get().uri("/api/v1/transactions")
+    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+      .uri("/api/v1/transactions")
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
 
@@ -83,7 +86,22 @@ class TransactionControllerTest {
   void findTransactionByProduct() {
     when(transactionService.findTransactionByProduct(productId)).thenReturn(Flux.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get().uri("/api/v1/transactions/product/" + productId)
+    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+      .uri("/api/v1/transactions/product/" + productId)
+      .accept(MediaType.APPLICATION_JSON)
+      .exchange();
+
+    responseSpec.expectStatus().isOk()
+      .expectHeader().contentType(MediaType.APPLICATION_JSON);
+  }
+
+  @Test
+  @DisplayName("GET -> /api/v1/transactions/product/{productId}/limit")
+  void findTransactionByProductAndLimit() {
+    when(transactionService.findTransactionByProductAndLimit(productId)).thenReturn(Flux.just(transactionDto));
+
+    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+      .uri("/api/v1/transactions/product/" + productId + "/limit")
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
 
@@ -94,9 +112,11 @@ class TransactionControllerTest {
   @Test
   @DisplayName("GET -> /api/v1/transactions/commission/{productId}")
   void findCommissionByProduct() {
-    when(transactionService.findCommissionByProduct(productId, "2022-01-13", "2022-01-16")).thenReturn(Flux.just(transactionDto));
+    when(transactionService.findCommissionByProduct(productId, "2022-01-13", "2022-01-16"))
+      .thenReturn(Flux.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get().uri("/api/v1/transactions/commission/" + productId + "?from=2022-01-13&until=2022-01-16")
+    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+      .uri("/api/v1/transactions/commission/" + productId + "?from=2022-01-13&until=2022-01-16")
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
 
@@ -115,6 +135,8 @@ class TransactionControllerTest {
 
     responseSpec.expectStatus().isOk()
       .expectHeader().contentType(MediaType.APPLICATION_JSON);
+    responseSpec.expectBody()
+      .jsonPath("$.id").isEqualTo(transactionDto.getId());
   }
 
   @Test
@@ -143,12 +165,15 @@ class TransactionControllerTest {
   void removeTransactionDebit() {
     when(transactionService.removeTransactionDebit(id)).thenReturn(Mono.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.delete().uri("/api/v1/transactions/debits/" + id)
+    WebTestClient.ResponseSpec responseSpec = webTestClient.delete()
+      .uri("/api/v1/transactions/debits/" + id)
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
 
     responseSpec.expectStatus().isOk()
       .expectHeader().contentType(MediaType.APPLICATION_JSON);
+    responseSpec.expectBody()
+      .jsonPath("$.id").isEqualTo(transactionDto.getId());
   }
 
   @Test
@@ -176,40 +201,43 @@ class TransactionControllerTest {
 
     responseSpec.expectStatus().isOk()
       .expectHeader().contentType(MediaType.APPLICATION_JSON);
+    responseSpec.expectBody()
+      .jsonPath("$.id").isEqualTo(transactionDto.getId());
   }
 
   @Test
   void fallBackPostTransactionDebit() {
-    Assertions.assertNotNull(transactionController.fallBackPostTransactionDebit(transactionDto,new RuntimeException("")));
+    Assertions.assertNotNull(transactionController.fallBackPostTransactionDebit(transactionDto, new RuntimeException("")));
   }
 
   @Test
   void fallBackPostTransferDebit() {
-    Assertions.assertNotNull(transactionController.fallBackPostTransferDebit(transactionDto,new RuntimeException("")));
+    Assertions.assertNotNull(transactionController.fallBackPostTransferDebit(transactionDto, new RuntimeException("")));
   }
 
   @Test
   void fallBackPutTransactionDebit() {
-    Assertions.assertNotNull(transactionController.fallBackPutTransactionDebit(id,transactionDto,new RuntimeException("")));
+    Assertions.assertNotNull(transactionController.fallBackPutTransactionDebit(id, transactionDto, new RuntimeException("")));
   }
 
   @Test
   void fallBackDeleteTransactionDebit() {
-    Assertions.assertNotNull(transactionController.fallBackDeleteTransactionDebit(id,new RuntimeException("")));
+    Assertions.assertNotNull(transactionController.fallBackDeleteTransactionDebit(id, new RuntimeException("")));
   }
 
   @Test
   void fallBackPostTransactionCredit() {
-    Assertions.assertNotNull(transactionController.fallBackPostTransactionCredit(transactionDto,new RuntimeException("")));
+    Assertions.assertNotNull(transactionController.fallBackPostTransactionCredit(transactionDto, new RuntimeException("")));
   }
 
   @Test
   void fallBackPutTransactionCredit() {
-    Assertions.assertNotNull(transactionController.fallBackPutTransactionCredit(id,transactionDto,new RuntimeException("")));
+    Assertions.assertNotNull(transactionController.fallBackPutTransactionCredit(id, transactionDto, new RuntimeException("")));
   }
 
   @Test
   void fallBackDeleteTransactionCredit() {
-    Assertions.assertNotNull(transactionController.fallBackDeleteTransactionCredit(id,new RuntimeException("")));
+    Assertions.assertNotNull(transactionController.fallBackDeleteTransactionCredit(id, new RuntimeException("")));
   }
+
 }

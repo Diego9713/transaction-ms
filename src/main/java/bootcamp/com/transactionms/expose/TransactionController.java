@@ -1,7 +1,7 @@
 package bootcamp.com.transactionms.expose;
 
 import bootcamp.com.transactionms.business.ITransactionService;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -43,6 +43,17 @@ public class TransactionController {
    */
   @GetMapping("/product/{productId}")
   public Flux<TransactionDto> findTransactionByProduct(@PathVariable("productId") String productId) {
+    return transactionService.findTransactionByProduct(productId);
+  }
+
+  /**
+   * Method to find the  ten movements that a product.
+   *
+   * @param productId -> identifier of la account.
+   * @return a list transaction.
+   */
+  @GetMapping("/product/{productId}/limit")
+  public Flux<TransactionDto> findTransactionByProductAndLimit(@PathVariable("productId") String productId) {
     return transactionService.findTransactionByProduct(productId);
   }
 
@@ -184,8 +195,7 @@ public class TransactionController {
   public Mono<ResponseEntity<String>> fallBackPostTransactionDebit(@RequestBody TransactionDto transaction,
                                                                    RuntimeException ex) {
     return Mono.just(ResponseEntity.ok().body("Search for the "
-      + transaction.getProductId()
-      + " in the service not available."));
+      + transaction.getProductId() + " in the service not available."));
   }
 
   /**
@@ -197,8 +207,7 @@ public class TransactionController {
   public Mono<ResponseEntity<String>> fallBackPostTransferDebit(@RequestBody TransactionDto transaction,
                                                                 RuntimeException ex) {
     return Mono.just(ResponseEntity.ok().body("Transfer with "
-      + transaction.getProductId()
-      + " not available microservice."));
+      + transaction.getProductId() + " not available microservice."));
   }
 
   /**
@@ -211,8 +220,7 @@ public class TransactionController {
                                                                   @RequestBody TransactionDto transaction,
                                                                   RuntimeException ex) {
     return Mono.just(ResponseEntity.ok().body("update to "
-      + id + " and transaction "
-      + transaction.getId() + " not available."));
+      + id + " and transaction " + transaction.getId() + " not available."));
   }
 
   /**
@@ -234,8 +242,7 @@ public class TransactionController {
   public Mono<ResponseEntity<String>> fallBackPostTransactionCredit(@RequestBody TransactionDto transaction,
                                                                     RuntimeException ex) {
     return Mono.just(ResponseEntity.ok().body("post to credit with "
-      + transaction.getProductId()
-      + " not available method"));
+      + transaction.getProductId() + " not available method"));
   }
 
   /**
@@ -248,8 +255,7 @@ public class TransactionController {
                                                                    @RequestBody TransactionDto transaction,
                                                                    RuntimeException ex) {
     return Mono.just(ResponseEntity.ok().body("update to credit with "
-      + id + "and transaction "
-      + transaction.getProductId()
+      + id + "and transaction " + transaction.getProductId()
       + " not available method."));
   }
 

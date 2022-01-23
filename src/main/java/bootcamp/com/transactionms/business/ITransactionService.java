@@ -1,6 +1,6 @@
 package bootcamp.com.transactionms.business;
 
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -11,6 +11,8 @@ public interface ITransactionService {
   Mono<TransactionDto> findByIdTransaction(String id);
 
   Flux<TransactionDto> findTransactionByProduct(String productId);
+
+  Flux<TransactionDto> findTransactionByProductAndLimit(String productId);
 
   Flux<TransactionDto> findCommissionByProduct(String id, String from, String until);
 
