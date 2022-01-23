@@ -1,4 +1,4 @@
-package bootcamp.com.transactionms.model;
+package bootcamp.com.transactionms.model.dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -1,16 +1,13 @@
 package bootcamp.com.transactionms.utils;
 
 import bootcamp.com.transactionms.model.Transaction;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.test.context.SpringBootTest;
-
 import java.time.LocalDate;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class AppUtilsTest {
@@ -49,17 +46,17 @@ class AppUtilsTest {
   }
 
   @Test
-  void entity() {
+  void entityToTransactionDto() {
     Assertions.assertNotNull(AppUtils.entityToTransactionDto(transaction));
   }
 
   @Test
-  void transaction() {
+  void transactionDtoToEntity() {
     Assertions.assertNotNull(AppUtils.transactionDtoToEntity(transactionDto));
   }
 
   @Test
-  void convert() {
+  void convertDateToString() {
     Assertions.assertNotNull(AppUtils.convertDateToString());
   }
 }

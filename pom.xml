@@ -205,6 +205,8 @@
 					<append>true</append>
 					<excludes>
 						<exclude>com/nttdata/bootcamp/*/model/thirdparty/**/*</exclude>
+						<exclude>**/config/*</exclude>
+						<exclude>**/business/helper/*</exclude>
 					</excludes>
 				</configuration>
 				<executions>
@@ -269,6 +271,8 @@
 					<excludes>
 						<exclude>com/tdp/ms/*/model/thirdparty/**/*</exclude>
 						<exclude>com/tdp/ms/*/eventflow/**/*</exclude>
+						<exclude>**/config/*</exclude>
+						<exclude>**/business/helper/*</exclude>
 					</excludes>
 				</configuration>
 			</plugin>

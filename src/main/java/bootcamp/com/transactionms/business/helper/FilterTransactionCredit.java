@@ -1,14 +1,12 @@
 package bootcamp.com.transactionms.business.helper;
 
-import bootcamp.com.transactionms.model.ProductDto;
 import bootcamp.com.transactionms.model.Transaction;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.ProductDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import bootcamp.com.transactionms.utils.ConstantsCredit;
 import bootcamp.com.transactionms.utils.ConstantsCreditTransac;
-
 import java.util.Arrays;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -45,7 +43,7 @@ public class FilterTransactionCredit {
     Mono<TransactionDto> transactionDtoMono = Mono.just(new TransactionDto());
 
     if (Arrays.stream(ConstantsCreditTransac.values()).anyMatch(m -> m.toString()
-      .equalsIgnoreCase(transaction.getTransactionType()))) {
+        .equalsIgnoreCase(transaction.getTransactionType()))) {
       if (transaction.getTransactionType().equalsIgnoreCase(ConstantsCreditTransac.CREDIT_PAYMENT.name())) {
         transactionDtoMono = filterCreditPayment(transaction, productDto);
       } else {
@@ -67,8 +65,8 @@ public class FilterTransactionCredit {
     Mono<TransactionDto> transactionDtoMono = Mono.just(new TransactionDto());
 
     if (productDto.getAmount() > 0
-      && productDto.getTransactNumberDay().getDayOfMonth()
-      == productDto.getTransactNumberDay().plusMonths(1).getDayOfMonth()) {
+        && productDto.getTransactNumberDay().getDayOfMonth()
+        == productDto.getTransactNumberDay().plusMonths(1).getDayOfMonth()) {
 
       productDto.setAmount(productDto.getAmount() - transaction.getTransactionAmount());
       transactionDtoMono = filterSaveProduct(productDto, transaction);
@@ -105,9 +103,9 @@ public class FilterTransactionCredit {
     if (productDto.getAccountType().equalsIgnoreCase(ConstantsCredit.CREDIT.name())) {
       transaction.setProductId(productDto.getId());
       Mono<ProductDto> productDtoMono = webClientProductHelper.updateProduct(productDto.getId(), productDto);
-      transactionDtoMono = productDtoMono.flatMap(productDto1 -> productDto1.getId() != null
-        ? Mono.just(transaction)
-        : Mono.just(new TransactionDto()));
+      transactionDtoMono = productDtoMono
+        .filter(productDto1 -> productDto1.getId() != null)
+        .flatMap(findProduct -> Mono.just(transaction));
     }
     return transactionDtoMono;
   }

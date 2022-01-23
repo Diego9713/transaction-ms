@@ -1,6 +1,6 @@
 package bootcamp.com.transactionms.business.helper;
 
-import bootcamp.com.transactionms.model.ProductDto;
+import bootcamp.com.transactionms.model.dto.ProductDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;

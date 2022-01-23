@@ -6,24 +6,28 @@ import bootcamp.com.transactionms.business.helper.FilterTransaction;
 import bootcamp.com.transactionms.business.helper.FilterTransactionCredit;
 import bootcamp.com.transactionms.business.helper.FilterTransactionDebit;
 import bootcamp.com.transactionms.business.helper.WebClientProductHelper;
-import bootcamp.com.transactionms.model.ProductDto;
+import bootcamp.com.transactionms.model.dto.ProductDto;
 import bootcamp.com.transactionms.model.Transaction;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import bootcamp.com.transactionms.repository.ITransactionRepository;
-import bootcamp.com.transactionms.utils.ConstantsCredit;
-import bootcamp.com.transactionms.utils.ConstantsCreditTransac;
-import bootcamp.com.transactionms.utils.ConstantsDebitTransac;
-import bootcamp.com.transactionms.utils.ConstantsPayMethod;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import bootcamp.com.transactionms.utils.*;
+import com.google.gson.Gson;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -45,8 +49,10 @@ class TransactionServiceTest {
   @MockBean
   private WebClientProductHelper webClientProductHelper;
 
+  public static MockWebServer mockBackEnd;
   private static final TransactionDto transactionDto = new TransactionDto();
   private static final Transaction transaction = new Transaction();
+  private static final Transaction transactionRemove = new Transaction();
   private static final List<Transaction> transactionDtoList = new ArrayList<>();
   private static final String id = "61db9bc2b09be072956ae684";
   private static final String productId = "61db64d731dec743727907f3";
@@ -64,7 +70,9 @@ class TransactionServiceTest {
   private static final ProductDto productDto = new ProductDto();
   private static final String idProduct = "61db64d731dec743727907f3";
   private static final String accountType = "SAVING";
-  private static final String accountNumber = "d85c241a-2eb7-40da-938c-097f30d3756f";
+  private static final String accountNumber = "d558f2fb-dc37-4b32-ba9f-88b31d8efe10";
+  private static final String subAccountNumber = "d558f2fb-dc37-4b32-ba9f-88b31d8efe10";
+  private static final int level = 1;
   private static final String currency = "PEN";
   private static final double amount = 6300;
   private static final double maintenanceCommission = 0;
@@ -77,13 +85,14 @@ class TransactionServiceTest {
   private static final LocalDate createdAtProduct = LocalDate.now();
   private static final String createdByProduct = "pedro";
   private static final LocalDate updateAtProduct = LocalDate.now();
+  private static final LocalDate expiredDate = LocalDate.parse("2023-01-19");
   private static final String updateByProduct = "pedro";
   private static final double minimumAverageAmount = 0;
   private static final double averageDailyBalance = 0;
   private static final LocalDate averageDailyBalanceDay = LocalDate.now();
 
   @BeforeAll
-  static void setUp() {
+  static void setUp(@Value("${server.port}") int port) throws IOException {
     transactionDto.setId(id);
     transactionDto.setProductId(productId);
     transactionDto.setFromProduct(fromProduct);
@@ -97,6 +106,8 @@ class TransactionServiceTest {
     transactionDto.setUpdateBy(updateBy);
     transactionDto.setStatus(status);
     BeanUtils.copyProperties(transactionDto, transaction);
+    BeanUtils.copyProperties(transactionDto, transactionRemove);
+    transactionRemove.setStatus(ConstantsTransacStatus.REMOVE.name());
     transactionDtoList.add(transaction);
 
     productDto.setId(idProduct);
@@ -118,30 +129,109 @@ class TransactionServiceTest {
     productDto.setMinimumAverageAmount(minimumAverageAmount);
     productDto.setAverageDailyBalance(averageDailyBalance);
     productDto.setAverageDailyBalanceDay(averageDailyBalanceDay);
+    productDto.setSubAccountNumber(subAccountNumber);
+    productDto.setLevel(level);
+    productDto.setExpiredDate(expiredDate);
+    productDto.getAccountType();
+    productDto.getLevel();
+    productDto.getSubAccountNumber();
+    productDto.getExpiredDate();
+    productDto.getAccountNumber();
+    productDto.getCurrency();
+    productDto.getAmount();
+    productDto.getMaintenanceCommission();
+    productDto.getMaintenanceCommissionDay();
+    productDto.getMaxTransactNumber();
+    productDto.getTransactNumberDay();
+    productDto.getCreditLimit();
+    productDto.getCustomer();
+    productDto.getStatus();
+    productDto.getCreatedAt();
+    productDto.getCreatedBy();
+    productDto.getUpdateAt();
+    productDto.getUpdateBy();
+    productDto.getMinimumAverageAmount();
+    productDto.getAverageDailyBalance();
+    productDto.getAverageDailyBalanceDay();
+    productDto.getId();
+    mockBackEnd = new MockWebServer();
+    mockBackEnd.start(port);
+  }
+
+  @AfterAll
+  static void tearDown() throws IOException {
+    mockBackEnd.shutdown();
+  }
+
+  @BeforeEach
+  void setUp() {
+    Gson gson = new Gson();
+    mockBackEnd.url("http://localhost:9090/product");
+    mockBackEnd.enqueue(new MockResponse()
+      .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+      .setBody(gson.toJson(transactionDto))
+      .setResponseCode(HttpStatus.OK.value()));
   }
 
   @Test
   void findAllTransaction() {
     when(transactionRepository.findAll()).thenReturn(Flux.just(transaction));
-    Assertions.assertNotNull(transactionService.findAllTransaction());
+    Flux<TransactionDto> transactionDtoFlux = transactionService.findAllTransaction();
+    StepVerifier
+      .create(transactionDtoFlux)
+      .consumeNextWith(newTransaction -> {
+        Assertions.assertEquals(status, newTransaction.getStatus());
+      })
+      .verifyComplete();
   }
 
   @Test
   void findByIdTransaction() {
     when(transactionRepository.findById(id)).thenReturn(Mono.just(transaction));
-    Assertions.assertNotNull(transactionService.findByIdTransaction(id));
+    Mono<TransactionDto> transactionDtoMono = transactionService.findByIdTransaction(id);
+    StepVerifier
+      .create(transactionDtoMono)
+      .consumeNextWith(newTransaction -> {
+        Assertions.assertEquals(status, newTransaction.getStatus());
+      })
+      .verifyComplete();
   }
 
   @Test
   void findTransactionByProduct() {
     when(transactionRepository.findByProductId(productId)).thenReturn(Flux.just(transaction));
-    Assertions.assertNotNull(transactionService.findTransactionByProduct(productId));
+    Flux<TransactionDto> transactionDtoFlux = transactionService.findTransactionByProduct(productId);
+    StepVerifier
+      .create(transactionDtoFlux)
+      .consumeNextWith(newTransaction -> {
+        Assertions.assertEquals(status, newTransaction.getStatus());
+      })
+      .verifyComplete();
+  }
+
+  @Test
+  void findTransactionByProductAndLimit() {
+    when(transactionRepository.findByProductIdOrderByTransactionAmountDesc(productId)).thenReturn(Flux.just(transaction));
+    Flux<TransactionDto> transactionDtoFlux = transactionService.findTransactionByProductAndLimit(productId);
+    StepVerifier
+      .create(transactionDtoFlux)
+      .consumeNextWith(newTransaction -> {
+        Assertions.assertEquals(status, newTransaction.getStatus());
+      })
+      .verifyComplete();
   }
 
   @Test
   void findCommissionByProduct() {
-    when(transactionRepository.findByProductIdAndCreatedAtBetween(productId, "2022-01-13", "2022-01-16")).thenReturn(Flux.just(transaction));
-    Assertions.assertNotNull(transactionService.findCommissionByProduct(productId, "2022-01-13", "2022-01-16"));
+    when(transactionRepository.findByProductIdAndCreatedAtBetween(productId, "2022-01-13", "2022-01-16"))
+      .thenReturn(Flux.just(transaction));
+    Flux<TransactionDto> transactionDtoFlux = transactionService.findCommissionByProduct(productId, "2022-01-13", "2022-01-16");
+    StepVerifier
+      .create(transactionDtoFlux)
+      .consumeNextWith(newTransaction -> {
+        Assertions.assertEquals(status, newTransaction.getStatus());
+      })
+      .verifyComplete();
   }
 
   @Test
@@ -159,8 +249,11 @@ class TransactionServiceTest {
     transactionDto.setTransactionType(ConstantsDebitTransac.TRANSFER.name());
     when(filterTransaction.filterTransactionCreate(transactionDto)).thenReturn(Mono.just(transactionDto));
     when(transactionRepository.findByProductId(productId)).thenReturn(Flux.just(transaction));
+    when(transactionRepository.findByProductId(fromProduct)).thenReturn(Flux.just(transaction));
     when(filterTransactionDebit.filterDebit(transactionDto,productId,Flux.just(transaction))).thenReturn(Mono.just(transactionDto));
+    when(filterTransactionDebit.filterDebit(transactionDto,fromProduct,Flux.just(transaction))).thenReturn(Mono.just(transactionDto));
     when(filterTransactionDebit.isSave(transactionDto, productId, transactionDtoList)).thenReturn(Mono.just(transactionDto));
+    when(filterTransactionDebit.isSave(transactionDto, fromProduct, transactionDtoList)).thenReturn(Mono.just(transactionDto));
     when(transactionRepository.save(transaction)).thenReturn(Mono.just(transaction));
     Assertions.assertNotNull(transactionService.createTransferDebit(transactionDto));
   }
@@ -172,6 +265,7 @@ class TransactionServiceTest {
     BeanUtils.copyProperties(transactionDto,transaction);
     when(transactionRepository.findById(id)).thenReturn(Mono.just(transaction));
     when(transactionRepository.findByProductId(productId)).thenReturn(Flux.just(transaction));
+    when(filterTransactionDebit.updateDebits(transactionDto,transactionDto)).thenReturn(transactionDto);
     when(filterTransactionDebit.filterDebit(transactionDto,productId,Flux.just(transaction))).thenReturn(Mono.just(transactionDto));
     when(filterTransaction.filterTransactionUpdate(Mono.just(transactionDto))).thenReturn(Mono.just(transactionDto));
     when(transactionRepository.save(transaction)).thenReturn(Mono.just(transaction));
@@ -181,32 +275,37 @@ class TransactionServiceTest {
   @Test
   void removeTransactionDebit() {
     when(transactionRepository.findById(id)).thenReturn(Mono.just(transaction));
-    when(filterTransactionDebit.filterRemoveProduct(transaction)).thenReturn(Mono.just(Boolean.TRUE));
-    when(filterTransaction.filterTransactionDelete(transaction)).thenReturn(Mono.just(transaction));
-    when(transactionRepository.save(transaction)).thenReturn(Mono.just(transaction));
-    Assertions.assertNotNull(transactionService.removeTransactionDebit(id));
+    when(filterTransactionDebit.filterRemoveProduct(transactionRemove)).thenReturn(Mono.just(Boolean.TRUE));
+    when(filterTransaction.filterTransactionDelete(transaction)).thenReturn(Mono.just(transactionRemove));
+    when(transactionRepository.save(transactionRemove)).thenReturn(Mono.just(transactionRemove));
+    //Assertions.assertNotNull(transactionService.removeTransactionDebit(id));
+    Mono<TransactionDto> transactionDtoMono = transactionService.removeTransactionDebit(id);
+    StepVerifier
+      .create(transactionDtoMono)
+      .expectSubscription()
+      .expectComplete();
   }
 
-  /*@Test
+ /*@Test
   void createTransactionCredit() {
-    productDto.setAccountType(ConstantsCredit.CREDIT.name());
-    transaction.setTransactionType(ConstantsCreditTransac.CREDIT_PAYMENT.name());
-    when(filterTransaction.filterTransactionCreate(transactionDto)).thenReturn(Mono.just(transactionDto));
     when(transactionRepository.findByProductId(productId)).thenReturn(Flux.just(transaction));
-    when(filterTransactionCredit.filterCredit(transactionDto,Flux.just(transaction))).thenReturn(Mono.just(productDto));
-    when(filterTransactionCredit.isSave(transactionDto)).thenReturn(Mono.just(productDto));
-    when(webClientProductHelper.findProduct(productId)).thenReturn(Mono.just(productDto));
-    when(webClientProductHelper.updateProduct(productId,productDto)).thenReturn(Mono.just(productDto));
-    when(transactionRepository.insert(transaction)).thenReturn(Mono.just(transaction));
-    transactionDto.setPaymentMethod(ConstantsPayMethod.DIRECT.name());
-    transactionDto.setTransactionType(ConstantsCreditTransac.CREDIT_PAYMENT.name());
-    Assertions.assertNotNull(transactionService.createTransactionCredit(transactionDto));
+    when(filterTransactionCredit.filterCredit(transactionDto,Flux.just(transaction))).thenReturn(Mono.just(transactionDto));
+    when(filterTransaction.filterTransactionCreate(transactionDto)).thenReturn(Mono.just(transactionDto));
+    when(transactionRepository.save(transaction)).thenReturn(Mono.just(transaction));
+    Mono<TransactionDto> transactionDtoMono = transactionService.createTransactionCredit(transactionDto);
+    StepVerifier
+      .create(transactionDtoMono)
+      .expectSubscription()
+      .expectComplete();
   }*/
 
   @Test
   void updateTransactionCredit() {
     when(transactionRepository.findById(id)).thenReturn(Mono.just(transaction));
+    when(transactionRepository.findByProductId(productId)).thenReturn(Flux.just(transaction));
     when(filterTransaction.filterTransactionUpdate(Mono.just(transactionDto))).thenReturn(Mono.just(transactionDto));
+    when(filterTransactionCredit.updateCredits(transactionDto,transactionDto)).thenReturn(transactionDto);
+    when(filterTransactionCredit.filterCredit(transactionDto,Flux.fromIterable(transactionDtoList))).thenReturn(Mono.just(transactionDto));
     when(transactionRepository.save(transaction)).thenReturn(Mono.just(transaction));
     Assertions.assertNotNull(transactionService.updateTransactionCredit(transactionDto,id));
   }

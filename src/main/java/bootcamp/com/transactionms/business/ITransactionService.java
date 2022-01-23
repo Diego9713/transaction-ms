@@ -1,6 +1,6 @@
 package bootcamp.com.transactionms.business;
 
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

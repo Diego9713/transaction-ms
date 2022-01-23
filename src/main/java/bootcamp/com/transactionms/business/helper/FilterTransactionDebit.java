@@ -1,17 +1,15 @@
 package bootcamp.com.transactionms.business.helper;
 
-import bootcamp.com.transactionms.model.ProductDto;
 import bootcamp.com.transactionms.model.Transaction;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.ProductDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import bootcamp.com.transactionms.utils.ConstantsCredit;
 import bootcamp.com.transactionms.utils.ConstantsDebit;
 import bootcamp.com.transactionms.utils.ConstantsDebitTransac;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -51,23 +49,32 @@ public class FilterTransactionDebit {
                                              List<Transaction> transactionFlux) {
     Mono<TransactionDto> transactionMono = null;
     if (transaction.getId() == null
-      && !transaction.getTransactionType().equalsIgnoreCase(ConstantsDebitTransac.TRANSFER.name())) {
+        && !transaction.getTransactionType().equalsIgnoreCase(ConstantsDebitTransac.TRANSFER.name())) {
       Flux<ProductDto> productDtoFlux = webClientProductHelper.findProductByAccount(productDto.getAccountNumber());
       Mono<List<ProductDto>> productDtoList = productDtoFlux.collectList();
-      transactionMono = productDtoList.flatMap(productDos -> filterProductByLevel(transaction, transactionFlux, productDos));
+      transactionMono = productDtoList
+        .flatMap(productDos -> filterProductByLevel(transaction, transactionFlux, productDos));
     } else {
       transactionMono = filterProductByTransaction(transaction, productDto, transactionFlux);
     }
     return transactionMono;
   }
 
+  /**
+   * Method filter product for level of creation.
+   *
+   * @param transaction     -> is object sending.
+   * @param transactionFlux -> is list transactions.
+   * @param productDtoList  -> is list of account product.
+   * @return a product filter.
+   */
   public Mono<TransactionDto> filterProductByLevel(TransactionDto transaction,
                                                    List<Transaction> transactionFlux,
                                                    List<ProductDto> productDtoList) {
     Mono<TransactionDto> transactionMono = Mono.just(new TransactionDto());
     for (ProductDto dto : productDtoList) {
       if (dto.getAmount() >= transaction.getTransactionAmount()
-        && !dto.getAccountType().equalsIgnoreCase(ConstantsCredit.CREDIT.name())) {
+          && !dto.getAccountType().equalsIgnoreCase(ConstantsCredit.CREDIT.name())) {
         transactionMono = filterProductByTransaction(transaction, dto, transactionFlux);
         break;
       }
@@ -75,6 +82,14 @@ public class FilterTransactionDebit {
     return transactionMono;
   }
 
+  /**
+   * Method to filter product for transaction type.
+   *
+   * @param transaction     -> is object sending.
+   * @param productDto      -> is object find.
+   * @param transactionFlux -> is list transactions.
+   * @return a product for transaction.
+   */
   public Mono<TransactionDto> filterProductByTransaction(TransactionDto transaction,
                                                          ProductDto productDto,
                                                          List<Transaction> transactionFlux) {
@@ -82,7 +97,7 @@ public class FilterTransactionDebit {
     Mono<TransactionDto> transactionMono = Mono.just(new TransactionDto());
 
     if (Arrays.stream(ConstantsDebitTransac.values()).anyMatch(m -> m.toString()
-      .equalsIgnoreCase(transaction.getTransactionType()))) {
+        .equalsIgnoreCase(transaction.getTransactionType()))) {
 
       if (transaction.getTransactionType().equalsIgnoreCase(ConstantsDebitTransac.DEPOSIT.name())) {
 
@@ -232,7 +247,7 @@ public class FilterTransactionDebit {
       productDto.setMaxTransactNumber(productDto.getMaxTransactNumber() + 1);
     }
     if (transactionFlux.size() < productDto.getMaxTransactNumber() && LocalDate.now()
-      .isEqual(productDto.getTransactNumberDay()) || transaction.getId() != null) {
+        .isEqual(productDto.getTransactNumberDay()) || transaction.getId() != null) {
       if (transaction.getId() == null) {
         productDto.setTransactNumberDay(LocalDate.now().plusDays(10));
       }
@@ -296,7 +311,7 @@ public class FilterTransactionDebit {
   /**
    * Method to condition the updating of the transaction Debits.
    *
-   * @param transaction -> attribute object type transaction.
+   * @param transaction     -> attribute object type transaction.
    * @param findTransaction -> transaction finder.
    * @return the condition for saving.
    */
@@ -312,5 +327,7 @@ public class FilterTransactionDebit {
     }
     return transaction;
   }
+
+
 
 }
