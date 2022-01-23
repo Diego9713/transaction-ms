@@ -1,0 +1,9 @@
+server:
+  port: 9090
+spring:
+  application:
+    name: mock-card-ms
+  data:
+    mongodb:
+      uri: mongodb://localhost
+      database: mock

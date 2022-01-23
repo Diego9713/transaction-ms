@@ -1,13 +1,15 @@
 package bootcamp.com.transactionms.business.helper;
 
-import bootcamp.com.transactionms.model.ProductDto;
 import bootcamp.com.transactionms.model.Transaction;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.ProductDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import bootcamp.com.transactionms.utils.ConstantsCredit;
 import bootcamp.com.transactionms.utils.ConstantsCreditTransac;
 import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -22,7 +24,7 @@ public class FilterTransactionCredit {
    * @return a object product saving.
    */
 
-  public Mono<ProductDto> isSave(TransactionDto transaction) {
+  public Mono<TransactionDto> isSave(TransactionDto transaction) {
     Mono<ProductDto> findToProduct = webClientProductHelper.findProduct(transaction.getProductId());
     return findToProduct.filter(e -> e.getAccountType()
         .equalsIgnoreCase(ConstantsCredit.CREDIT.name()))
@@ -37,27 +39,57 @@ public class FilterTransactionCredit {
    * @param productDto  -> is object find.
    * @return a product condition.
    */
-  public Mono<ProductDto> isTypeTransfer(TransactionDto transaction, ProductDto productDto) {
-    Mono<ProductDto> productDtoMono = Mono.just(new ProductDto());
+  public Mono<TransactionDto> isTypeTransfer(TransactionDto transaction, ProductDto productDto) {
+    Mono<TransactionDto> transactionDtoMono = Mono.just(new TransactionDto());
 
     if (Arrays.stream(ConstantsCreditTransac.values()).anyMatch(m -> m.toString()
         .equalsIgnoreCase(transaction.getTransactionType()))) {
       if (transaction.getTransactionType().equalsIgnoreCase(ConstantsCreditTransac.CREDIT_PAYMENT.name())) {
-        if (productDto.getAmount() > 0
-            && productDto.getTransactNumberDay().getDayOfMonth()
-            == productDto.getTransactNumberDay().plusMonths(1).getDayOfMonth()) {
-
-          productDto.setAmount(productDto.getAmount() - transaction.getTransactionAmount());
-          productDtoMono = filterSaveProduct(productDto);
-        }
+        transactionDtoMono = filterCreditPayment(transaction, productDto);
       } else {
-        if (productDto.getAmount() != productDto.getCreditLimit()) {
-          productDto.setAmount(productDto.getAmount() + transaction.getTransactionAmount());
-          productDtoMono = filterSaveProduct(productDto);
-        }
+        transactionDtoMono = filterCharge(transaction, productDto);
+
       }
     }
-    return productDtoMono;
+    return transactionDtoMono;
+  }
+
+  /**
+   * Method for filter Credit Payment.
+   *
+   * @param transaction -> object sending for user.
+   * @param productDto  -> product finder for webclient.
+   * @return object type transaction
+   */
+  public Mono<TransactionDto> filterCreditPayment(TransactionDto transaction, ProductDto productDto) {
+    Mono<TransactionDto> transactionDtoMono = Mono.just(new TransactionDto());
+
+    if (productDto.getAmount() > 0
+        && productDto.getTransactNumberDay().getDayOfMonth()
+        == productDto.getTransactNumberDay().plusMonths(1).getDayOfMonth()) {
+
+      productDto.setAmount(productDto.getAmount() - transaction.getTransactionAmount());
+      transactionDtoMono = filterSaveProduct(productDto, transaction);
+    }
+    return transactionDtoMono;
+  }
+
+  /**
+   * Method for filter Charge.
+   *
+   * @param transaction -> object sending for user.
+   * @param productDto  -> product finder for webclient.
+   * @return object type transaction
+   */
+  public Mono<TransactionDto> filterCharge(TransactionDto transaction, ProductDto productDto) {
+    Mono<TransactionDto> transactionDtoMono = Mono.just(new TransactionDto());
+
+    if (productDto.getAmount() != productDto.getCreditLimit()) {
+      productDto.setAmount(productDto.getAmount() + transaction.getTransactionAmount());
+      transactionDtoMono = filterSaveProduct(productDto, transaction);
+    }
+
+    return transactionDtoMono;
   }
 
   /**
@@ -66,12 +98,16 @@ public class FilterTransactionCredit {
    * @param productDto -> is object find.
    * @return a product condition.
    */
-  public Mono<ProductDto> filterSaveProduct(ProductDto productDto) {
-    Mono<ProductDto> productDtoMono = Mono.just(new ProductDto());
+  public Mono<TransactionDto> filterSaveProduct(ProductDto productDto, TransactionDto transaction) {
+    Mono<TransactionDto> transactionDtoMono = Mono.just(new TransactionDto());
     if (productDto.getAccountType().equalsIgnoreCase(ConstantsCredit.CREDIT.name())) {
-      productDtoMono = webClientProductHelper.updateProduct(productDto.getId(), productDto);
+      transaction.setProductId(productDto.getId());
+      Mono<ProductDto> productDtoMono = webClientProductHelper.updateProduct(productDto.getId(), productDto);
+      transactionDtoMono = productDtoMono
+        .filter(productDto1 -> productDto1.getId() != null)
+        .flatMap(findProduct -> Mono.just(transaction));
     }
-    return productDtoMono;
+    return transactionDtoMono;
   }
 
   /**
@@ -100,4 +136,31 @@ public class FilterTransactionCredit {
     return optionRemove;
   }
 
+  /**
+   * Method to condition the saving of the transaction Credits.
+   *
+   * @param transaction -> attribute object type transaction.
+   * @return the condition for saving.
+   */
+  public Mono<TransactionDto> filterCredit(TransactionDto transaction, Flux<Transaction> transactionFlux) {
+    Mono<List<Transaction>> transactionMono = transactionFlux.collectList();
+    return transactionMono.flatMap(transactionList -> isSave(transaction));
+  }
+
+  /**
+   * Method to condition the updating of the transaction Credits.
+   *
+   * @param transaction     -> attribute object type transaction.
+   * @param findTransaction -> transaction finder.
+   * @return the condition for saving.
+   */
+  public TransactionDto updateCredits(TransactionDto transaction, TransactionDto findTransaction) {
+
+    if (findTransaction.getTransactionAmount() > transaction.getTransactionAmount()) {
+      transaction.setTransactionAmount(findTransaction.getTransactionAmount() - transaction.getTransactionAmount());
+    } else {
+      transaction.setTransactionAmount(transaction.getTransactionAmount() - findTransaction.getTransactionAmount());
+    }
+    return transaction;
+  }
 }

@@ -1,7 +1,7 @@
 package bootcamp.com.transactionms.business.helper;
 
 import bootcamp.com.transactionms.model.Transaction;
-import bootcamp.com.transactionms.model.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDto;
 import bootcamp.com.transactionms.utils.AppUtils;
 import bootcamp.com.transactionms.utils.ConstantsPayMethod;
 import bootcamp.com.transactionms.utils.ConstantsTransacStatus;
@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class FilterTransaction {
+
   private static final String BANK = "123456789";
 
   /**

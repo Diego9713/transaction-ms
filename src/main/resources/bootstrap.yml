@@ -4,6 +4,7 @@ spring:
   cloud:
     config:
       enabled: true
+      #uri: http://192.168.100.116:8001
       uri: http://localhost:8001
       username: root
       password: s3cr3t
