@@ -84,7 +84,7 @@ public class FilterTransactionCredit {
   public Mono<TransactionDto> filterCharge(TransactionDto transaction, ProductDto productDto) {
     Mono<TransactionDto> transactionDtoMono = Mono.just(new TransactionDto());
 
-    if (productDto.getAmount() != productDto.getCreditLimit()) {
+    if ((productDto.getAmount() + transaction.getTransactionAmount()) <= productDto.getCreditLimit()) {
       productDto.setAmount(productDto.getAmount() + transaction.getTransactionAmount());
       transactionDtoMono = filterSaveProduct(productDto, transaction);
     }
