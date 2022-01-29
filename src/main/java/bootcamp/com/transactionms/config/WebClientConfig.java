@@ -1,5 +1,6 @@
 package bootcamp.com.transactionms.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -11,10 +12,14 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 @EnableWebFlux
 public class WebClientConfig implements WebFluxConfigurer {
+
+  @Value("${api.gateway.uri}")
+  private String uri;
+
   @Bean
   public WebClient getWebClient() {
     return WebClient.builder()
-      .baseUrl("http://localhost:8081")
+      .baseUrl(uri)
       .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
       .build();
   }
