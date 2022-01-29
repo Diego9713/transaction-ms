@@ -1,6 +1,8 @@
 package bootcamp.com.transactionms.expose;
 
+import bootcamp.com.transactionms.business.ITransactionCoinPurseService;
 import bootcamp.com.transactionms.business.ITransactionService;
+import bootcamp.com.transactionms.business.helper.FilterTransactionCoinPurse;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,13 @@ public class TransactionController {
   @Autowired
   @Qualifier("TransactionService")
   private ITransactionService transactionService;
+
+  @Autowired
+  @Qualifier("TransactionCoinPurseService")
+  private ITransactionCoinPurseService transactionCoinPurseService;
+
+  @Autowired
+  private FilterTransactionCoinPurse coinPurse;
 
   /**
    * Method to find all transactions.
@@ -187,6 +196,50 @@ public class TransactionController {
   }
 
   /**
+   * Method to Create Transaction for coin purse.
+   *
+   * @param transaction -> object to create.
+   * @return object created transaction.
+   */
+  @CircuitBreaker(name = "postCoinPurseCB", fallbackMethod = "fallBackPostCoinPurse")
+  @PostMapping("/coinpurse")
+  public Mono<ResponseEntity<String>> saveTransactionCoinPurse(@RequestBody TransactionDto transaction) {
+    return transactionCoinPurseService.createTransactionCoinPurse(transaction)
+      .flatMap(p -> Mono.just(ResponseEntity.ok().body(coinPurse.generateMessage(p))))
+      .switchIfEmpty(Mono.just(ResponseEntity.badRequest().build()));
+  }
+
+  /**
+   * Method to update transaction for coin purse.
+   *
+   * @param id          -> identify unique of transaction.
+   * @param transaction -> object to create.
+   * @return object updated.
+   */
+  @CircuitBreaker(name = "putCoinPurseCB", fallbackMethod = "fallBackPutCoinPurse")
+  @PutMapping("/coinpurse/{id}")
+  public Mono<ResponseEntity<TransactionDto>> updateTransactionCoinPurse(@PathVariable("id") String id,
+                                                                         @RequestBody TransactionDto transaction) {
+    return transactionCoinPurseService.updateTransactionCoinPurse(transaction, id)
+      .flatMap(p -> Mono.just(ResponseEntity.ok().body(p)))
+      .switchIfEmpty(Mono.just(ResponseEntity.badRequest().build()));
+  }
+
+  /**
+   * Method to remove transaction of coin purse.
+   *
+   * @param id -> identify unique of transaction.
+   * @return object change status.
+   */
+  @CircuitBreaker(name = "deleteCoinPurseCB", fallbackMethod = "fallBackDeleteCoinPurse")
+  @DeleteMapping("/coinpurse/{id}")
+  public Mono<ResponseEntity<TransactionDto>> deleteTransactionCoinPurse(@PathVariable("id") String id) {
+    return transactionCoinPurseService.removeTransactionCoinPurse(id)
+      .flatMap(p -> Mono.just(ResponseEntity.ok().body(p)))
+      .switchIfEmpty(Mono.just(ResponseEntity.badRequest().build()));
+  }
+
+  /**
    * Method CircuitBreaker to save transaction debit.
    *
    * @param ex -> this is exception error.
@@ -267,6 +320,42 @@ public class TransactionController {
    */
   public Mono<ResponseEntity<String>> fallBackDeleteTransactionCredit(@PathVariable String id, RuntimeException ex) {
     return Mono.just(ResponseEntity.ok().body("delete to credit with " + id + " not available"));
+  }
+
+  /**
+   * Method CircuitBreaker to Post Transaction coin purse.
+   *
+   * @param transaction -> Object transaction.
+   * @param ex -> this is exception error.
+   * @return exception error.
+   */
+  public Mono<ResponseEntity<String>> fallBackPostCoinPurse(@RequestBody TransactionDto transaction,
+                                                            RuntimeException ex) {
+    return Mono.just(ResponseEntity.ok().body("Save Coin Purse not available"));
+  }
+
+  /**
+   * Method CircuitBreaker to Update Transaction coin purse.
+   *
+   * @param transaction -> Object transaction.
+   * @param ex -> this is exception error.
+   * @return exception error.
+   */
+  public Mono<ResponseEntity<String>> fallBackPutCoinPurse(@PathVariable("id") String id,
+                                                           @RequestBody TransactionDto transaction,
+                                                           RuntimeException ex) {
+    return Mono.just(ResponseEntity.ok().body("Update " + id + " Coin Purse not available"));
+  }
+
+  /**
+   * Method CircuitBreaker to Delete Transaction coin purse.
+   *
+   * @param id -> Identify unique transaction.
+   * @param ex -> this is exception error.
+   * @return exception error.
+   */
+  public Mono<ResponseEntity<String>> fallBackDeleteCoinPurse(@PathVariable("id") String id, RuntimeException ex) {
+    return Mono.just(ResponseEntity.ok().body("Delete Coin Purse not available"));
   }
 
 }
