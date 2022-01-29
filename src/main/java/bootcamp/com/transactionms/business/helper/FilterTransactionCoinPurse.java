@@ -1,14 +1,11 @@
 package bootcamp.com.transactionms.business.helper;
 
-import bootcamp.com.transactionms.config.KafkaMessageProducer;
 import bootcamp.com.transactionms.model.dto.CoinPurseDto;
-import bootcamp.com.transactionms.model.dto.KafkaMessageDto;
 import bootcamp.com.transactionms.model.dto.ProductDto;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
 import bootcamp.com.transactionms.utils.ConstantsCoinPurse;
 import bootcamp.com.transactionms.utils.ConstantsPayMethod;
 import bootcamp.com.transactionms.utils.ConstantsTransacStatus;
-import com.google.gson.Gson;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,8 +18,6 @@ public class FilterTransactionCoinPurse {
   private WebClientCoinPurseHelper webClientCoinPurseHelper;
   @Autowired
   private WebClientProductHelper webClientProductHelper;
-  @Autowired
-  private KafkaMessageProducer kafkaMessageProducer;
 
   /**
    * Method to search coin purse for from id.
@@ -301,21 +296,5 @@ public class FilterTransactionCoinPurse {
   public Mono<TransactionDto> changeStatusTransaction(TransactionDto transactionDto) {
     transactionDto.setStatus(ConstantsTransacStatus.REMOVE.name());
     return Mono.just(transactionDto);
-  }
-
-  /**
-   * Method to create message and sent for kafka.
-   *
-   * @param transactionDto -> object created successfully.
-   * @return message create.
-   */
-  public String generateMessage(TransactionDto transactionDto) {
-    KafkaMessageDto kafkaMessageDto = new KafkaMessageDto();
-    kafkaMessageDto.setAccount(transactionDto.getFromProduct());
-    kafkaMessageDto.setMessage("Sent you to amount of ");
-    kafkaMessageDto.setAmount(transactionDto.getTransactionAmount());
-    String gson = new Gson().toJson(kafkaMessageDto);
-    kafkaMessageProducer.sendMessage(gson);
-    return gson;
   }
 }

@@ -2,7 +2,6 @@ package bootcamp.com.transactionms.expose;
 
 import bootcamp.com.transactionms.business.ITransactionCoinPurseService;
 import bootcamp.com.transactionms.business.ITransactionService;
-import bootcamp.com.transactionms.business.helper.FilterTransactionCoinPurse;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +29,6 @@ public class TransactionController {
   @Autowired
   @Qualifier("TransactionCoinPurseService")
   private ITransactionCoinPurseService transactionCoinPurseService;
-
-  @Autowired
-  private FilterTransactionCoinPurse coinPurse;
 
   /**
    * Method to find all transactions.
@@ -203,9 +199,9 @@ public class TransactionController {
    */
   @CircuitBreaker(name = "postCoinPurseCB", fallbackMethod = "fallBackPostCoinPurse")
   @PostMapping("/coinpurse")
-  public Mono<ResponseEntity<String>> saveTransactionCoinPurse(@RequestBody TransactionDto transaction) {
+  public Mono<ResponseEntity<TransactionDto>> saveTransactionCoinPurse(@RequestBody TransactionDto transaction) {
     return transactionCoinPurseService.createTransactionCoinPurse(transaction)
-      .flatMap(p -> Mono.just(ResponseEntity.ok().body(coinPurse.generateMessage(p))))
+      .flatMap(p -> Mono.just(ResponseEntity.ok().body(p)))
       .switchIfEmpty(Mono.just(ResponseEntity.badRequest().build()));
   }
 

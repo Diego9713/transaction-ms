@@ -59,7 +59,8 @@ public class TransactionCoinPurseService implements ITransactionCoinPurseService
     log.info("Save Transaction Coin Purse >>>");
     double amout = transaction.getTransactionAmount();
     Mono<TransactionDto> findTransaction = transactionRepository.findById(id).map(AppUtils::entityToTransactionDto);
-    Mono<TransactionDto> newFindTransaction = findTransaction.flatMap(transactionDto -> filterTransactionCoinPurse.filterUpdateTransaction(transactionDto, transaction));
+    Mono<TransactionDto> newFindTransaction = findTransaction
+        .flatMap(transactionDto -> filterTransactionCoinPurse.filterUpdateTransaction(transactionDto, transaction));
     Mono<CoinPurseDto> coinPurseFrom = filterTransactionCoinPurse.searchFromCoinPurse(transaction.getFromProduct());
     Mono<CoinPurseDto> coinPurseTo = filterTransactionCoinPurse.searchToCoinPurse(transaction.getProductId());
 

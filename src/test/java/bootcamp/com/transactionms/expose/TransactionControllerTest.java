@@ -1,5 +1,6 @@
 package bootcamp.com.transactionms.expose;
 
+import bootcamp.com.transactionms.business.impl.TransactionCoinPurseService;
 import bootcamp.com.transactionms.business.impl.TransactionService;
 import bootcamp.com.transactionms.model.Transaction;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
@@ -13,9 +14,12 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
 
@@ -34,6 +38,9 @@ class TransactionControllerTest {
 
   @MockBean
   private TransactionService transactionService;
+
+  @MockBean
+  private TransactionCoinPurseService transactionCoinPurseService;
 
   private static final TransactionDto transactionDto = new TransactionDto();
   private static final Transaction transaction = new Transaction();
@@ -206,6 +213,36 @@ class TransactionControllerTest {
   }
 
   @Test
+  @DisplayName("POST -> /api/v1/transactions/coinpurse")
+  void saveTransactionCoinPurse() {
+    when(transactionCoinPurseService.createTransactionCoinPurse(transactionDto)).thenReturn(Mono.just(transactionDto));
+    Assertions.assertNotNull(transactionController.saveTransactionCoinPurse(transactionDto));
+  }
+
+  @Test
+  @DisplayName("PUT -> /api/v1/transactions/coinpurse/{id}")
+  void updateTransactionCoinPurse() {
+    when(transactionCoinPurseService.updateTransactionCoinPurse(transactionDto,id)).thenReturn(Mono.just(transactionDto));
+    Assertions.assertNotNull(transactionController.updateTransactionCoinPurse(id,transactionDto));
+  }
+
+  @Test
+  @DisplayName("DELETE -> /api/v1/transactions/coinpurse/{id}")
+  void deleteTransactionCoinPurse() {
+    when(transactionCoinPurseService.removeTransactionCoinPurse(id)).thenReturn(Mono.just(transactionDto));
+
+    WebTestClient.ResponseSpec responseSpec = webTestClient.delete()
+      .uri("/api/v1/transactions/coinpurse/" + id)
+      .accept(MediaType.APPLICATION_JSON)
+      .exchange();
+
+    responseSpec.expectStatus().isOk()
+      .expectHeader().contentType(MediaType.APPLICATION_JSON);
+    responseSpec.expectBody()
+      .jsonPath("$.id").isEqualTo(transactionDto.getId());
+  }
+
+  @Test
   void fallBackPostTransactionDebit() {
     Assertions.assertNotNull(transactionController.fallBackPostTransactionDebit(transactionDto, new RuntimeException("")));
   }
@@ -240,4 +277,18 @@ class TransactionControllerTest {
     Assertions.assertNotNull(transactionController.fallBackDeleteTransactionCredit(id, new RuntimeException("")));
   }
 
+  @Test
+  void fallBackPostCoinPurse() {
+    Assertions.assertNotNull(transactionController.fallBackPostCoinPurse(transactionDto, new RuntimeException("")));
+  }
+
+  @Test
+  void fallBackPutCoinPurse() {
+    Assertions.assertNotNull(transactionController.fallBackPutCoinPurse(id, transactionDto, new RuntimeException("")));
+  }
+
+  @Test
+  void fallBackDeleteCoinPurse() {
+    Assertions.assertNotNull(transactionController.fallBackDeleteCoinPurse(id, new RuntimeException("")));
+  }
 }
