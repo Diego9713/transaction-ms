@@ -6,6 +6,7 @@ import bootcamp.com.transactionms.model.Transaction;
 import bootcamp.com.transactionms.model.dto.CoinPurseDto;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
 import bootcamp.com.transactionms.repository.ITransactionRepository;
+import bootcamp.com.transactionms.utils.ConstantsCoinPurse;
 import bootcamp.com.transactionms.utils.ConstantsTransacStatus;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.BeanUtils;
@@ -32,6 +33,7 @@ class TransactionCoinPurseServiceTest {
 
   private static final TransactionDto transactionDto = new TransactionDto();
   private static final Transaction transaction = new Transaction();
+  private static final TransactionDto transactionRemoveDto = new TransactionDto();
   private static final Transaction transactionRemove = new Transaction();
   private static final List<Transaction> transactionDtoList = new ArrayList<>();
   private static final CoinPurseDto coinPurseDtoTo = new CoinPurseDto();
@@ -56,7 +58,7 @@ class TransactionCoinPurseServiceTest {
   private static final String idCoinFrom = "61db64ee31dec743727907f4" ;
   private static final String documentType = "DNI";
   private static final String documentNumber = "785412365";
-  private static final String coinPurseType = "COIN_PURSE_DNI";
+  private static final String coinPurseType = ConstantsCoinPurse.COIN_PURSE_DNI.name();
   private static final String firstName = "Diego";
   private static final String lastName = "Tafur Sanchez";
   private static final String phoneNumber = "85479632";
@@ -98,6 +100,7 @@ class TransactionCoinPurseServiceTest {
     coinPurseDtoFrom.setId(idCoinFrom);
     BeanUtils.copyProperties(transactionDto, transaction);
     BeanUtils.copyProperties(transactionDto, transactionRemove);
+    BeanUtils.copyProperties(transactionDto, transactionRemoveDto);
     transactionRemove.setStatus(ConstantsTransacStatus.REMOVE.name());
     transactionDtoList.add(transaction);
   }
@@ -117,9 +120,28 @@ class TransactionCoinPurseServiceTest {
 
   @Test
   void updateTransactionCoinPurse() {
+    when(transactionRepository.findById(transactionDto.getId())).thenReturn(Mono.just(transaction));
+    when(filterTransactionCoinPurse.filterUpdateTransaction(transactionDto,transactionDto)).thenReturn(Mono.just(transactionDto));
+    when(filterTransactionCoinPurse.searchFromCoinPurse(transactionDto.getFromProduct())).thenReturn(Mono.just(coinPurseDtoFrom));
+    when(filterTransactionCoinPurse.searchToCoinPurse(transactionDto.getProductId())).thenReturn(Mono.just(coinPurseDtoTo));
+    when(filterTransactionCoinPurse.filterCoinPurse(coinPurseDtoFrom,transactionDto)).thenReturn(Mono.just(true));
+    when(filterTransactionCoinPurse.filterCoinPurse(coinPurseDtoTo,transactionDto)).thenReturn(Mono.just(true));
+    when(filterTransactionCoinPurse.setAttributeTransaction(transactionDto,amount)).thenReturn(Mono.just(transactionDto));
+    when(transactionRepository.save(transaction)).thenReturn(Mono.just(transaction));
+    /*Mono<TransactionDto> transactionDtoMono = transactionCoinPurseService.updateTransactionCoinPurse(transactionDto,id);
+    StepVerifier.create(transactionDtoMono)
+      .expectNext(transactionDto)
+      .expectComplete();*/
+    Assertions.assertNotNull(transactionCoinPurseService.updateTransactionCoinPurse(transactionDto,id));
   }
 
   @Test
   void removeTransactionCoinPurse() {
+    when(transactionRepository.findById(transactionRemove.getId())).thenReturn(Mono.just(transactionRemove));
+    when(filterTransactionCoinPurse.removeTransaction(transactionRemoveDto)).thenReturn(Mono.just(Boolean.TRUE));
+    when(filterTransactionCoinPurse.changeStatusTransaction(transactionRemoveDto)).thenReturn(Mono.just(transactionRemoveDto));
+    when(transactionRepository.save(transactionRemove)).thenReturn(Mono.just(transactionRemove));
+    Assertions.assertNotNull(transactionCoinPurseService.removeTransactionCoinPurse(id));
+
   }
 }

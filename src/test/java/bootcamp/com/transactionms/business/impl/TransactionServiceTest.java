@@ -1,7 +1,6 @@
 package bootcamp.com.transactionms.business.impl;
 
 import static org.mockito.Mockito.when;
-
 import bootcamp.com.transactionms.business.helper.FilterTransaction;
 import bootcamp.com.transactionms.business.helper.FilterTransactionCredit;
 import bootcamp.com.transactionms.business.helper.FilterTransactionDebit;
@@ -26,7 +25,6 @@ import org.springframework.http.MediaType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -51,7 +49,9 @@ class TransactionServiceTest {
 
   public static MockWebServer mockBackEnd;
   private static final TransactionDto transactionDto = new TransactionDto();
+  private static final TransactionDto transactionDtoCredit = new TransactionDto();
   private static final Transaction transaction = new Transaction();
+  private static final Transaction transactionCredit = new Transaction();
   private static final Transaction transactionRemove = new Transaction();
   private static final List<Transaction> transactionDtoList = new ArrayList<>();
   private static final String id = "61db9bc2b09be072956ae684";
@@ -68,6 +68,7 @@ class TransactionServiceTest {
   private static final String status = "COMPLETE";
 
   private static final ProductDto productDto = new ProductDto();
+  private static final ProductDto productDtoCredit = new ProductDto();
   private static final String idProduct = "61db64d731dec743727907f3";
   private static final String accountType = "SAVING";
   private static final String accountNumber = "d558f2fb-dc37-4b32-ba9f-88b31d8efe10";
@@ -107,6 +108,10 @@ class TransactionServiceTest {
     transactionDto.setStatus(status);
     BeanUtils.copyProperties(transactionDto, transaction);
     BeanUtils.copyProperties(transactionDto, transactionRemove);
+    BeanUtils.copyProperties(transactionDto, transactionDtoCredit);
+    BeanUtils.copyProperties(transactionDtoCredit, transactionCredit);
+    transactionDtoCredit.setTransactionType(ConstantsCreditTransac.CHARGE.name());
+
     transactionRemove.setStatus(ConstantsTransacStatus.REMOVE.name());
     transactionDtoList.add(transaction);
 
@@ -132,6 +137,10 @@ class TransactionServiceTest {
     productDto.setSubAccountNumber(subAccountNumber);
     productDto.setLevel(level);
     productDto.setExpiredDate(expiredDate);
+    BeanUtils.copyProperties(productDto,productDtoCredit);
+    productDtoCredit.setAccountType("CREDIT");
+    productDtoCredit.setCreditLimit(25000);
+
     productDto.getAccountType();
     productDto.getLevel();
     productDto.getSubAccountNumber();
@@ -288,15 +297,15 @@ class TransactionServiceTest {
 
  /*@Test
   void createTransactionCredit() {
-    when(transactionRepository.findByProductId(productId)).thenReturn(Flux.just(transaction));
-    when(filterTransactionCredit.filterCredit(transactionDto,Flux.just(transaction))).thenReturn(Mono.just(transactionDto));
-    when(filterTransaction.filterTransactionCreate(transactionDto)).thenReturn(Mono.just(transactionDto));
-    when(transactionRepository.save(transaction)).thenReturn(Mono.just(transaction));
-    Mono<TransactionDto> transactionDtoMono = transactionService.createTransactionCredit(transactionDto);
+    when(transactionRepository.findByProductId(productId)).thenReturn(Flux.just(transactionCredit));
+    when(filterTransactionCredit.filterCredit(transactionDtoCredit,Flux.just(transactionCredit))).thenReturn(Mono.just(transactionDtoCredit));
+    when(filterTransaction.filterTransactionCreate(transactionDtoCredit)).thenReturn(Mono.just(transactionDtoCredit));
+    when(transactionRepository.save(transaction)).thenReturn(Mono.just(transactionCredit));
+    Mono<TransactionDto> transactionDtoMono = transactionService.createTransactionCredit(transactionDtoCredit);
     StepVerifier
       .create(transactionDtoMono)
-      .expectSubscription()
-      .expectComplete();
+      .expectNext(transactionDtoCredit)
+      .
   }*/
 
   @Test

@@ -14,17 +14,11 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
-
 import java.time.LocalDate;
-
 import static org.mockito.Mockito.when;
-
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "20000")
@@ -79,7 +73,8 @@ class TransactionControllerTest {
   void findAllTransaction() {
     when(transactionService.findAllTransaction()).thenReturn(Flux.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+    WebTestClient.ResponseSpec responseSpec = webTestClient
+      .get()
       .uri("/api/v1/transactions")
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
@@ -93,7 +88,8 @@ class TransactionControllerTest {
   void findTransactionByProduct() {
     when(transactionService.findTransactionByProduct(productId)).thenReturn(Flux.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+    WebTestClient.ResponseSpec responseSpec = webTestClient
+      .get()
       .uri("/api/v1/transactions/product/" + productId)
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
@@ -107,7 +103,8 @@ class TransactionControllerTest {
   void findTransactionByProductAndLimit() {
     when(transactionService.findTransactionByProductAndLimit(productId)).thenReturn(Flux.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+    WebTestClient.ResponseSpec responseSpec = webTestClient
+      .get()
       .uri("/api/v1/transactions/product/" + productId + "/limit")
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
@@ -122,7 +119,8 @@ class TransactionControllerTest {
     when(transactionService.findCommissionByProduct(productId, "2022-01-13", "2022-01-16"))
       .thenReturn(Flux.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get()
+    WebTestClient.ResponseSpec responseSpec = webTestClient
+      .get()
       .uri("/api/v1/transactions/commission/" + productId + "?from=2022-01-13&until=2022-01-16")
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
@@ -136,7 +134,9 @@ class TransactionControllerTest {
   void findOneTransaction() {
     when(transactionService.findByIdTransaction(id)).thenReturn(Mono.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.get().uri("/api/v1/transactions/" + id)
+    WebTestClient.ResponseSpec responseSpec = webTestClient
+      .get()
+      .uri("/api/v1/transactions/" + id)
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
 
@@ -202,7 +202,9 @@ class TransactionControllerTest {
   void removeTransactionCredit() {
     when(transactionService.removeTransactionCredit(id)).thenReturn(Mono.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.delete().uri("/api/v1/transactions/credits/" + id)
+    WebTestClient.ResponseSpec responseSpec = webTestClient
+      .delete()
+      .uri("/api/v1/transactions/credits/" + id)
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
 
@@ -222,8 +224,8 @@ class TransactionControllerTest {
   @Test
   @DisplayName("PUT -> /api/v1/transactions/coinpurse/{id}")
   void updateTransactionCoinPurse() {
-    when(transactionCoinPurseService.updateTransactionCoinPurse(transactionDto,id)).thenReturn(Mono.just(transactionDto));
-    Assertions.assertNotNull(transactionController.updateTransactionCoinPurse(id,transactionDto));
+    when(transactionCoinPurseService.updateTransactionCoinPurse(transactionDto, id)).thenReturn(Mono.just(transactionDto));
+    Assertions.assertNotNull(transactionController.updateTransactionCoinPurse(id, transactionDto));
   }
 
   @Test
@@ -231,7 +233,8 @@ class TransactionControllerTest {
   void deleteTransactionCoinPurse() {
     when(transactionCoinPurseService.removeTransactionCoinPurse(id)).thenReturn(Mono.just(transactionDto));
 
-    WebTestClient.ResponseSpec responseSpec = webTestClient.delete()
+    WebTestClient.ResponseSpec responseSpec = webTestClient
+      .delete()
       .uri("/api/v1/transactions/coinpurse/" + id)
       .accept(MediaType.APPLICATION_JSON)
       .exchange();
