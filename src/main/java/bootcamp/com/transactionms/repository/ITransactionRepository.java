@@ -14,4 +14,6 @@ public interface ITransactionRepository extends ReactiveMongoRepository<Transact
 
   Flux<Transaction> findByProductIdOrderByTransactionAmountDesc(String productId);
 
+  Flux<Transaction> findByProductIdAndStatus(String id, String status);
+
 }

@@ -29,6 +29,10 @@ public class FilterTransaction {
     if (transaction.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.DIRECT.name())) {
       transaction.setFromProduct(BANK);
     }
+    if (transaction.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
+      transaction.setStatus(ConstantsTransacStatus.PENDING.name());
+    }
+
     return Mono.just(transaction);
   }
 

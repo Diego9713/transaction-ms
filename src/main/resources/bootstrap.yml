@@ -13,4 +13,9 @@ api:
     #uri: http://20.127.248.66:8081
     uri: http://localhost:8081
 
+#buy and sell rate
+rate:
+  buy: 3.21
+  sell: 3.25
+
 
