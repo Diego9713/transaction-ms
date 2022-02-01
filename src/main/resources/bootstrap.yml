@@ -4,14 +4,14 @@ spring:
   cloud:
     config:
       enabled: true
-      #uri: http://20.84.15.129:8001
-      uri: http://localhost:8001
+      uri: http://20.84.15.129:8001
+      #uri: http://localhost:8001
       username: root
       password: s3cr3t
 api:
   gateway:
-    #uri: http://20.127.248.66:8081
-    uri: http://localhost:8081
+    uri: http://20.127.248.66:8081
+    #uri: http://localhost:8081
 
 #buy and sell rate
 rate:
