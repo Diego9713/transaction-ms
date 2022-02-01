@@ -3,11 +3,13 @@ package bootcamp.com.transactionms.business.helper;
 import bootcamp.com.transactionms.model.dto.CoinPurseDto;
 import bootcamp.com.transactionms.model.dto.ProductDto;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
+import bootcamp.com.transactionms.utils.AppUtils;
 import bootcamp.com.transactionms.utils.ConstantsCoinPurse;
 import bootcamp.com.transactionms.utils.ConstantsPayMethod;
 import bootcamp.com.transactionms.utils.ConstantsTransacStatus;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -18,6 +20,12 @@ public class FilterTransactionCoinPurse {
   private WebClientCoinPurseHelper webClientCoinPurseHelper;
   @Autowired
   private WebClientProductHelper webClientProductHelper;
+
+  @Value("${rate.buy}")
+  private String rateBuy;
+
+  @Value("${rate.sell}")
+  private String rateSell;
 
   /**
    * Method to search coin purse for from id.
@@ -50,7 +58,8 @@ public class FilterTransactionCoinPurse {
    */
   public Mono<Boolean> filterCoinPurse(CoinPurseDto coinPurseDto, TransactionDto transactionDto) {
     Mono<Boolean> bool = Mono.just(false);
-    if (transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.COIN_PURSE.name())) {
+    if (transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.COIN_PURSE.name())
+        || transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
       if (coinPurseDto.getCoinPurseType().equalsIgnoreCase(ConstantsCoinPurse.COIN_PURSE_DNI.name())) {
         bool = coinPurseTypeDni(coinPurseDto, transactionDto);
       } else {
@@ -72,6 +81,11 @@ public class FilterTransactionCoinPurse {
     if (transactionDto.getProductId().equalsIgnoreCase(coinPurseDto.getId())) {
       if (transactionDto.getId() != null) {
         coinPurseDto.setAmount(coinPurseDto.getAmount() - transactionDto.getTransactionAmount());
+
+        if (transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
+          double amountBuy = AppUtils.convertStringToDouble(rateBuy);
+          coinPurseDto.setBootCoin(coinPurseDto.getBootCoin() + (transactionDto.getTransactionAmount() / amountBuy));
+        }
       } else {
         coinPurseDto.setAmount(coinPurseDto.getAmount() + transactionDto.getTransactionAmount());
       }
@@ -81,6 +95,10 @@ public class FilterTransactionCoinPurse {
       double amount = 0;
       if (transactionDto.getId() != null) {
         amount = coinPurseDto.getAmount() + transactionDto.getTransactionAmount();
+        if (transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
+          double amountSell = AppUtils.convertStringToDouble(rateSell);
+          coinPurseDto.setBootCoin(coinPurseDto.getBootCoin() - (transactionDto.getTransactionAmount() / amountSell));
+        }
       } else {
         amount = coinPurseDto.getAmount() - transactionDto.getTransactionAmount();
       }
@@ -150,13 +168,23 @@ public class FilterTransactionCoinPurse {
       if (transactionDto.getId() != null) {
         productDtoMono.setAmount(productDtoMono.getAmount() - transactionDto.getTransactionAmount());
         coinPurseDto.setAmount(coinPurseDto.getAmount() - transactionDto.getTransactionAmount());
+
+        if (transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
+          double amountBuy = AppUtils.convertStringToDouble(rateBuy);
+          coinPurseDto.setBootCoin(coinPurseDto.getBootCoin() + (transactionDto.getTransactionAmount() / amountBuy));
+        }
+      } else {
+        productDtoMono.setAmount(productDtoMono.getAmount() + transactionDto.getTransactionAmount());
+        coinPurseDto.setAmount(coinPurseDto.getAmount() + transactionDto.getTransactionAmount());
       }
-      productDtoMono.setAmount(productDtoMono.getAmount() + transactionDto.getTransactionAmount());
-      coinPurseDto.setAmount(coinPurseDto.getAmount() + transactionDto.getTransactionAmount());
     } else {
       double amount = 0;
       if (transactionDto.getId() != null) {
         amount = productDtoMono.getAmount() + transactionDto.getTransactionAmount();
+        if (transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
+          double amountSell = AppUtils.convertStringToDouble(rateSell);
+          coinPurseDto.setBootCoin(coinPurseDto.getBootCoin() - (transactionDto.getTransactionAmount() / amountSell));
+        }
       } else {
         amount = productDtoMono.getAmount() - transactionDto.getTransactionAmount();
       }
@@ -177,7 +205,10 @@ public class FilterTransactionCoinPurse {
    * @return object transaction.
    */
   public Mono<TransactionDto> filterUpdateTransaction(TransactionDto findtransactionDto, TransactionDto transactionDto) {
-    findtransactionDto.setTransactionAmount(findtransactionDto.getTransactionAmount() - transactionDto.getTransactionAmount());
+    if (!transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
+      findtransactionDto.setTransactionAmount(findtransactionDto.getTransactionAmount() - transactionDto.getTransactionAmount());
+    }
+
     return Mono.just(findtransactionDto);
   }
 
@@ -189,6 +220,9 @@ public class FilterTransactionCoinPurse {
    * @return object transaction type.
    */
   public Mono<TransactionDto> setAttributeTransaction(TransactionDto transactionDto, double amount) {
+    if (transactionDto.getPaymentMethod().equalsIgnoreCase(ConstantsPayMethod.BOOT_COINS.name())) {
+      transactionDto.setStatus(ConstantsTransacStatus.COMPLETE.name());
+    }
     transactionDto.setTransactionAmount(amount);
     return Mono.just(transactionDto);
   }
@@ -297,4 +331,5 @@ public class FilterTransactionCoinPurse {
     transactionDto.setStatus(ConstantsTransacStatus.REMOVE.name());
     return Mono.just(transactionDto);
   }
+
 }

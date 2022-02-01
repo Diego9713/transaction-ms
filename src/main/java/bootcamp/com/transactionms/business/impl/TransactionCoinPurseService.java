@@ -5,12 +5,16 @@ import bootcamp.com.transactionms.business.helper.FilterTransaction;
 import bootcamp.com.transactionms.business.helper.FilterTransactionCoinPurse;
 import bootcamp.com.transactionms.model.dto.CoinPurseDto;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDtoBootCoins;
 import bootcamp.com.transactionms.repository.ITransactionRepository;
 import bootcamp.com.transactionms.utils.AppUtils;
+import bootcamp.com.transactionms.utils.ConstantsPayMethod;
+import bootcamp.com.transactionms.utils.ConstantsTransacStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service("TransactionCoinPurseService")
@@ -22,6 +26,19 @@ public class TransactionCoinPurseService implements ITransactionCoinPurseService
   private FilterTransactionCoinPurse filterTransactionCoinPurse;
   @Autowired
   private FilterTransaction filterTransaction;
+
+  /**
+   * Method to find status transaction pending.
+   *
+   * @param id -> identified unique transaction.
+   * @return objects with status pending.
+   */
+  @Override
+  @Transactional(readOnly = true)
+  public Flux<TransactionDto> findTransaccionWithStatus(String id) {
+    return transactionRepository.findByProductIdAndStatus(id, ConstantsTransacStatus.PENDING.name())
+      .map(AppUtils::entityToTransactionDto);
+  }
 
   /**
    * Method to Create Transaction for coin purse.
@@ -44,6 +61,21 @@ public class TransactionCoinPurseService implements ITransactionCoinPurseService
       .flatMap(b -> filterCreateTransaction.map(AppUtils::transactionDtoToEntity).flatMap(transactionRepository::save))
       .map(AppUtils::entityToTransactionDto);
 
+  }
+
+  /**
+   * Method to Buy Bootcoins of coin purse.
+   *
+   * @param transaction -> object to create.
+   * @return object created transaction.
+   */
+  @Override
+  @Transactional
+  public Mono<TransactionDtoBootCoins> buyBootCoins(TransactionDto transaction) {
+    return filterTransaction.filterTransactionCreate(transaction)
+      .map(AppUtils::transactionDtoToEntity)
+      .flatMap(transactionRepository::save)
+      .map(AppUtils::entityToBootCoins);
   }
 
   /**

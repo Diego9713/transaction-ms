@@ -3,6 +3,7 @@ package bootcamp.com.transactionms.expose;
 import bootcamp.com.transactionms.business.ITransactionCoinPurseService;
 import bootcamp.com.transactionms.business.ITransactionService;
 import bootcamp.com.transactionms.model.dto.TransactionDto;
+import bootcamp.com.transactionms.model.dto.TransactionDtoBootCoins;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -73,6 +74,17 @@ public class TransactionController {
                                                       @RequestParam("from") String from,
                                                       @RequestParam("until") String until) {
     return transactionService.findCommissionByProduct(productId, from, until);
+  }
+
+  /**
+   * Method to find the bank movements that a customer has.
+   *
+   * @param id -> identifier of la transaction.
+   * @return a list transaction.
+   */
+  @GetMapping("/status/pending/{productId}")
+  public Flux<TransactionDto> findTransactionWithStatus(@PathVariable("productId") String id) {
+    return transactionCoinPurseService.findTransaccionWithStatus(id);
   }
 
   /**
@@ -201,6 +213,19 @@ public class TransactionController {
   @PostMapping("/coinpurse")
   public Mono<ResponseEntity<TransactionDto>> saveTransactionCoinPurse(@RequestBody TransactionDto transaction) {
     return transactionCoinPurseService.createTransactionCoinPurse(transaction)
+      .flatMap(p -> Mono.just(ResponseEntity.ok().body(p)))
+      .switchIfEmpty(Mono.just(ResponseEntity.badRequest().build()));
+  }
+
+  /**
+   * Method to Buy Bootcoins of coin purse.
+   *
+   * @param transaction -> object to create.
+   * @return object created transaction.
+   */
+  @PostMapping("/coinpurse/buybootcoins")
+  public Mono<ResponseEntity<TransactionDtoBootCoins>> buyBootCoins(@RequestBody TransactionDto transaction) {
+    return transactionCoinPurseService.buyBootCoins(transaction)
       .flatMap(p -> Mono.just(ResponseEntity.ok().body(p)))
       .switchIfEmpty(Mono.just(ResponseEntity.badRequest().build()));
   }
